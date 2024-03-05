@@ -25,21 +25,23 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@bot.event
-async def on_message(message):
-    content = str(message.content).lower()
-    if content == "hi" or "<@1213876646315171841>" in content: 
-        if str(message.author) != "ASTRO#8574":
-            if str(message.author.display_name).lower() != "none":
-                await message.channel.send(f"hi {str(message.author.display_name).lower()}")
-            else:
-                await message.channel.send(f"hi {str(message.author).lower()}")
+### DANGEROUS ###
+# @bot.event
+# async def on_message(message):
+#     content = str(message.content).lower()
+#     if content == "hi" or "<@1213876646315171841>" in content: 
+#         if str(message.author) != "ASTRO#8574":
+#             if str(message.author.display_name).lower() != "none":
+#                 await message.channel.send(f"hi {str(message.author.display_name).lower()}")
+#             else:
+#                 await message.channel.send(f"hi {str(message.author).lower()}")
 
 @bot.tree.command(name="help", description="Shows available commands and what they do")
 async def help(message: discord.Interaction):
     helpMessage = """```Commands:
 /dpaste: Returns raw dpaste link
-/text_cm2: Returns a save string with your text```"""
+/text_cm2: Returns a save string with your text
+/decoder_generator: Returns a decoder```"""
 
     await message.response.send_message(helpMessage)
 
@@ -78,11 +80,15 @@ async def text_cm2(message: discord.Interaction, text: str, step: float=0.5):
 @bot.tree.command(name="decoder_generator", description="generate a decoder")
 @app_commands.describe(inputs="amount of inputs")
 async def decoder_generator(message: discord.Interaction, inputs: int):
-    output = f"{functions.generate_decoder(inputs)}"
-    if len(output) > 1000:
-        buffer = StringIO(output)
-        f = discord.File(buffer, filename="output.txt")
-        await message.response.send_message(file=f)
-    await message.response.send_message(f"```{output}```")
+    if inputs > 10:
+        await message.response.send_message("no, decoders only less than 10 inputs for now")
+    else:
+        output = f"{functions.generate_decoder(inputs)}"
+        if len(output) > 1000:
+            buffer = StringIO(output)
+            f = discord.File(buffer, filename="output.txt")
+            await message.response.send_message(file=f)
+        else:
+            await message.response.send_message(f"```{output}```")
 
 bot.run(TOKEN)

@@ -28,8 +28,12 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     content = str(message.content).lower()
-    if content == "hi" or "<@1213876646315171841>" in content and str(message.author) != "ASTRO#8574":
-        await message.channel.send(f"hi {str(message.author.nick).lower()}")
+    if content == "hi" or "<@1213876646315171841>" in content: 
+        if str(message.author) != "ASTRO#8574":
+            if str(message.author.display_name).lower() != "none":
+                await message.channel.send(f"hi {str(message.author.display_name).lower()}")
+            else:
+                await message.channel.send(f"hi {str(message.author).lower()}")
 
 @bot.tree.command(name="help", description="Shows available commands and what they do")
 async def help(message: discord.Interaction):
@@ -38,11 +42,6 @@ async def help(message: discord.Interaction):
 /text_cm2: Returns a save string with your text```"""
 
     await message.response.send_message(helpMessage)
-
-@bot.tree.command(name="sneeze", description="sneeze")
-async def sneeze(message: discord.Interaction):
-    o = "o"
-    await message.response.send_message(f"ach{o * random.randint(1,25)}")
 
 @bot.tree.command(name="say", description="make bot say something")
 @app_commands.describe(string="thing")

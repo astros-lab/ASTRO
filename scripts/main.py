@@ -10,6 +10,7 @@ from io import StringIO
 load_dotenv()
 
 TOKEN = os.environ['TOKEN']
+NAME = os.environ['name']
 
 bot = commands.Bot(command_prefix="", intents = discord.Intents.all())
 
@@ -25,41 +26,68 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-### DANGEROUS ###
-# @bot.event
-# async def on_message(message):
-#     content = str(message.content).lower()
-#     if content == "hi" or "<@1213876646315171841>" in content: 
-#         if str(message.author) != "ASTRO#8574":
-#             if str(message.author.display_name).lower() != "none":
-#                 await message.channel.send(f"hi {str(message.author.display_name).lower()}")
-#             else:
-#                 await message.channel.send(f"hi {str(message.author).lower()}")
+@bot.event
+async def on_message(message):
+    lowered_content = str(message.content).lower()
+    if lowered_content == "hi" or "<@1213876646315171841>" in lowered_content: 
+        if str(message.author) != "ASTRO#8574":
+            await message.channel.send("hi")
 
-@bot.tree.command(name="help", description="Shows available commands and what they do")
-async def help(message: discord.Interaction):
-    helpMessage = """```Commands:
-/dpaste: Returns raw dpaste link
-/text_cm2: Returns a save string with your text
-/decoder_generator: Returns a decoder```"""
+    content = message.content
+    command, inputs = functions.get_command(content)
+    joinedinputs = " ".join(inputs)
+    if command != "":
+        if "@here" in content or "@everyone" in content:
+                pass
+        elif command[0] == "$" and str(message.author) != "ASTRO#8574":
+            action = command[1:]
 
-    await message.response.send_message(helpMessage)
+            extracmds = {}
+
+            global NAME
+            with open(f"/home/{NAME}/workspace/ASTRO/commands.txt", "r+") as cmdsText:
+                cmds = cmdsText.read()
+                if cmds != "":
+                    lines = cmds.split(";")
+                    for i in range(len(lines)):
+                        if lines[i] != "":
+                            cmd = lines[i].split(",")
+                            cmdName = cmd[0]
+                            cmdOut = cmd[1]
+                            # print(cmdName, cmdOut, cmd)
+                            extracmds[cmdName] = cmdOut
+
+            # print(extracmds, message.author, command, action, inputs, joinedinputs)
+            
+            if action == "help":
+                output = f"'$' commands: praise, {', '.join(extracmds.keys())}"
+            elif action == "praise":
+                thing = joinedinputs
+                praise1 = f"{thing} is the best, everybody should pray to {thing}"
+                praise2 = f"We all live to love {thing}"
+                praise3 = f"We must all pray to {thing}"
+                praise4 = f"Nobody should disrespect {thing}"
+                praise5 = f"ALL HAIL {thing.upper()}"
+                praises = [praise1, praise2, praise3, praise4, praise5]
+                output = random.choice(praises)
+            elif action == "add" and str(message.author) == "gaming4cats":
+                name = inputs[0]
+                out = inputs[1:]
+                with open(f"/home/{NAME}/workspace/ASTRO/commands.txt", "a+") as cmds:
+                    cmds.write(f"{name},{' '.join(out)};")
+                    # print(f"{name},{' '.join(out)}\n")
+                output = f"Created command: {name}\nOutput: {' '.join(out)}"
+            else:
+                if action in extracmds.keys():
+                    output = extracmds[action]
+                else:
+                    output = "Invalid command, see $help."
+            await message.channel.send(output)
 
 @bot.tree.command(name="say", description="make bot say something")
 @app_commands.describe(string="thing")
 async def say(message: discord.Interaction, string: str):
     await message.response.send_message(string)
-
-@bot.tree.command(name="praise", description="praise something")
-@app_commands.describe(thing="thing to praise")
-async def praise(message: discord.Interaction, thing: str):
-    praise1 = f"{thing} is the best, everybody should pray to {thing}"
-    praise2 = f"We all live to love {thing}"
-    praise3 = f"We must all pray to {thing}"
-    praise4 = f"Nobody should disrespect {thing}"
-    praise5 = f"ALL HAIL {thing.upper()}"
-    praises = [praise1, praise2, praise3, praise4, praise5]
-    await message.response.send_message(random.choice(praises))
 
 @bot.tree.command(name="dpaste", description="get a raw dpaste link")
 @app_commands.describe(input="text you want to send to dpaste")
@@ -81,7 +109,7 @@ async def text_cm2(message: discord.Interaction, text: str, step: float=0.5):
 @app_commands.describe(inputs="amount of inputs")
 async def decoder_generator(message: discord.Interaction, inputs: int):
     if inputs > 10:
-        await message.response.send_message("no, decoders only less than 10 inputs for now")
+        await message.response.send_message("too much")
     else:
         output = f"{functions.generate_decoder(inputs)}"
         if len(output) > 1000:
@@ -90,5 +118,13 @@ async def decoder_generator(message: discord.Interaction, inputs: int):
             await message.response.send_message(file=f)
         else:
             await message.response.send_message(f"```{output}```")
+
+@bot.tree.command(name="suggest", description="suggest an idea for the bot")
+@app_commands.describe(topic="what do you want to suggest")
+async def suggest(message: discord.Interaction, topic: str):
+    global NAME
+    with open(f"/home/{NAME}/workspace/ASTRO/suggestions.txt", "a+") as s:
+        s.write(f"Name: {message.user}, Suggestion: {topic}\n")
+    await message.response.send_message("Added suggestion")
 
 bot.run(TOKEN)

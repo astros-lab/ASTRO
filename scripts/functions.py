@@ -1,6 +1,10 @@
 import requests
 import cm2py as cm2
 
+def get_command(message: str):
+    separated = message.split(" ")
+    return separated[0], separated[1:]
+
 def dpaste(text):
     data = {"content": text, "syntax": "text", "expiry_days": 1}
     headers = {"User-Agent": "saveString"}

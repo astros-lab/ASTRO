@@ -75,4 +75,14 @@ async def text_cm2(message: discord.Interaction, text: str, step: float=0.5):
         await message.response.send_message(file=f)
     await message.response.send_message(f"```{output}```")
 
+@bot.tree.command(name="decoder_generator", description="generate a decoder")
+@app_commands.describe(inputs="amount of inputs")
+async def decoder_generator(message: discord.Interaction, inputs: int):
+    output = f"{functions.generate_decoder(inputs)}"
+    if len(output) > 1000:
+        buffer = StringIO(output)
+        f = discord.File(buffer, filename="output.txt")
+        await message.response.send_message(file=f)
+    await message.response.send_message(f"```{output}```")
+
 bot.run(TOKEN)

@@ -28,3 +28,42 @@ def make_text(text, step=0.5, format=True):
     returning = f"{saveString}"
 
     return returning
+
+def generate_decoder(inputs):
+    def possibilites(amount):
+        if amount == 0:
+            return ['']
+        else:
+            possibles = []
+            for p in possibilites(amount-1):
+                possibles.append(p + '0')
+                possibles.append(p + '1')
+            return possibles
+
+    save = cm2.Save()
+
+    ors = []
+    nots = []
+    ands = []
+
+    for i in range(inputs):
+        ors.append(save.addBlock(cm2.OR, (-i, 0, 0)))
+        nots.append(save.addBlock(cm2.NOR, (-i-inputs, 0, 0)))
+        save.addConnection(ors[i], nots[i])
+
+    combinations = possibilites(inputs)
+
+    for p in range(len(combinations)):
+        ands.append(save.addBlock(cm2.AND, (-p, 0, 1)))
+
+    for a in range(len(combinations)):
+        counter = 0
+        for b in combinations[a]:
+            if int(b) == 0:
+                save.addConnection(ors[counter], ands[a])
+            elif int(b) == 1:
+                save.addConnection(nots[counter], ands[a])
+            counter += 1
+
+    saveString = save.exportSave()
+    return saveString

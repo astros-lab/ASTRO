@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import random
 import functions
 from io import StringIO
+import json
 
 load_dotenv()
 
@@ -28,6 +29,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    global NAME
     lowered_content = str(message.content).lower()
     if lowered_content == "hi" or "<@1213876646315171841>" in lowered_content: 
         if str(message.author) != "ASTRO#8574":
@@ -42,25 +44,15 @@ async def on_message(message):
         elif command[0] == "$" and str(message.author) != "ASTRO#8574":
             action = command[1:]
 
-            extracmds = {}
+            extracmds = []
 
-            global NAME
-            with open(f"/home/{NAME}/workspace/ASTRO/commands.txt", "r+") as cmdsText:
-                cmds = cmdsText.read()
-                if cmds != "":
-                    lines = cmds.split(";")
-                    for i in range(len(lines)):
-                        if lines[i] != "":
-                            cmd = lines[i].split(",")
-                            cmdName = cmd[0]
-                            cmdOut = cmd[1]
-                            # print(cmdName, cmdOut, cmd)
-                            extracmds[cmdName] = cmdOut
-
-            # print(extracmds, message.author, command, action, inputs, joinedinputs)
+            commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/commands.json", "r"))
+            cmd_list = commands["commands"]
+            for i in range(len(cmd_list)):
+                extracmds.append(cmd_list[i]['command'])
             
             if action == "help":
-                output = f"'$' commands: praise, {', '.join(extracmds.keys())}"
+                output = f"'$' commands: praise, {', '.join(extracmds)}"
             elif action == "praise":
                 thing = joinedinputs
                 praise1 = f"{thing} is the best, everybody should pray to {thing}"
@@ -73,13 +65,17 @@ async def on_message(message):
             elif action == "add" and str(message.author) == "gaming4cats":
                 name = inputs[0]
                 out = inputs[1:]
-                with open(f"/home/{NAME}/workspace/ASTRO/commands.txt", "a+") as cmds:
-                    cmds.write(f"{name},{' '.join(out)};")
-                    # print(f"{name},{' '.join(out)}\n")
+                data = {
+                    "command":name,
+                    "output": " ".join(out)
+                }
+                
+                functions.json_add(data, f"/home/{NAME}/workspace/ASTRO/")
+
                 output = f"Created command: {name}\nOutput: {' '.join(out)}"
             else:
-                if action in extracmds.keys():
-                    output = extracmds[action]
+                if action in extracmds:
+                    output = cmd_list[extracmds.index(action)]['output']
                 else:
                     output = "Invalid command, see $help."
             await message.channel.send(output)

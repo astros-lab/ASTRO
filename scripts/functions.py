@@ -1,5 +1,6 @@
 import requests
 import cm2py as cm2
+import json
 
 def get_command(message: str):
     separated = message.split(" ")
@@ -71,3 +72,10 @@ def generate_decoder(inputs):
 
     saveString = save.exportSave()
     return saveString
+
+def json_add(data, path, filename="commands.json"):
+    with open(f"{path}{filename}", "r+") as jsonFile:
+        file_data = json.load(jsonFile)
+        file_data["commands"].append(data)
+        jsonFile.seek(0)
+        json.dump(file_data, jsonFile, indent=4)

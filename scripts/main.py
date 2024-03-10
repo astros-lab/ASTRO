@@ -50,9 +50,16 @@ async def on_message(message):
             cmd_list = commands["commands"]
             for i in range(len(cmd_list)):
                 extracmds.append(cmd_list[i]['command'])
-            
+
+            commands = ["praise", "binary", "integer", "ascii", "pop", "say"]
+
+            all_commands = commands + extracmds
+
             if action == "help":
-                output = f"'$' commands: praise, {', '.join(extracmds)}"
+                output = f"'$' commands: {', '.join(all_commands)}"
+            elif action == "say":
+                await message.delete()
+                output = joinedinputs
             elif action == "praise":
                 thing = joinedinputs
                 praise1 = f"{thing} is the best, everybody should pray to {thing}"
@@ -62,6 +69,46 @@ async def on_message(message):
                 praise5 = f"ALL HAIL {thing.upper()}"
                 praises = [praise1, praise2, praise3, praise4, praise5]
                 output = random.choice(praises)
+            elif action == "pop":
+                try:
+                    x = int(inputs[0])
+                    y = int(inputs[1])
+                    
+                    matrix = []
+
+                    for i in range(y):
+                        matrix.append("||pop||" * x)
+
+                    output = "\n".join(matrix)
+                except Exception:
+                    output = "$pop {x} {y}"
+            elif action == "binary":
+                try:
+                    value = int("".join(inputs))
+                    output = f"Integer to binary:\n```{bin(value)[2:]}```"
+                except Exception:
+                    ascii_val = []
+                    value = " ".join(inputs)
+                    for c in value:
+                        val = bin(ord(c))
+                        ascii_val.append(val[2:])
+                    ascii_joined = " ".join(ascii_val)
+                    output = f"Ascii to binary:\n```{ascii_joined}```"
+            elif action == "integer":
+                try:
+                    value = "".join(inputs)
+                    output = f"Binary to integer:\n```{int(value, 2)}```"
+                except Exception:
+                    output = "Must be binary."
+            elif action == "ascii":
+                try:
+                    characters = []
+                    for c in inputs:
+                        characters.append(chr(int(c, 2)))
+                    chars_joined = "".join(characters)
+                    output = f"Binary to ascii:\n```{chars_joined}```"
+                except Exception:
+                    output = "Must be binary."
             elif action == "add" and str(message.author) == "gaming4cats":
                 name = inputs[0]
                 out = inputs[1:]
@@ -78,12 +125,10 @@ async def on_message(message):
                     output = cmd_list[extracmds.index(action)]['output']
                 else:
                     output = "Invalid command, see $help."
-            await message.channel.send(output)
-
-@bot.tree.command(name="say", description="make bot say something")
-@app_commands.describe(string="thing")
-async def say(message: discord.Interaction, string: str):
-    await message.response.send_message(string)
+            try:
+                await message.channel.send(output)
+            except discord.errors.HTTPException:
+                await message.channel.send("Message over character limit")
 
 @bot.tree.command(name="dpaste", description="get a raw dpaste link")
 @app_commands.describe(input="text you want to send to dpaste")

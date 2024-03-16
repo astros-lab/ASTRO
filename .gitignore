@@ -1,5 +1,5 @@
 .env
 __pycache__
 suggestions.txt
-commands.txt
+dollarLog.txt
 commands.json

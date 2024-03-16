@@ -44,6 +44,12 @@ async def on_message(message):
         elif command[0] == "$" and str(message.author) != "ASTRO#8574":
             action = command[1:]
 
+            with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "a+") as log:
+                if joinedinputs == '':
+                    log.write(f"{message.author} did command ``{action}``\n")
+                else:
+                    log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
+
             extracmds = []
 
             commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/commands.json", "r"))
@@ -57,6 +63,26 @@ async def on_message(message):
 
             if action == "help":
                 output = f"'$' commands: {', '.join(all_commands)}"
+            elif action == "poll":
+                numbers = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"] 
+                # color = functions.rgb_hex(0, 0, 255)
+                try:
+                    name = joinedinputs.split(",")[0]
+                    options = joinedinputs.split(",")[1:]
+                    if len(options) > 10:
+                        await message.channel.send("Maximum 10 options.")
+                        return
+                    
+                    embed = discord.Embed(title=name, description=f"Poll created by {message.author.display_name}({message.author})", color=0x0000ff)
+                    for i, option in enumerate(options):
+                        embed.add_field(name="",value=f"{numbers[i]} {option}", inline=False)
+
+                    poll = await message.channel.send(embed=embed)
+                    for j, option in enumerate(options):
+                        await poll.add_reaction(numbers[j])
+                    return
+                except Exception:
+                    output = "Invalid, $poll {title}, {options}, {more options} (use ',' as a separator))"
             elif action == "say":
                 await message.delete()
                 output = joinedinputs
@@ -120,6 +146,9 @@ async def on_message(message):
                 functions.json_add(data, f"/home/{NAME}/workspace/ASTRO/")
 
                 output = f"Created command: {name}\nOutput: {' '.join(out)}"
+            elif action == "log" and str(message.author) == "gaming4cats":
+                with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "r+") as log:
+                    output = "Recent $ commands\n" + "".join(log.readlines()[-5:])
             else:
                 if action in extracmds:
                     output = cmd_list[extracmds.index(action)]['output']

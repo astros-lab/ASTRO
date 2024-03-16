@@ -47,14 +47,14 @@ def generate_decoder(inputs):
 
     save = cm2.Save()
 
-    ors = []
+    inputGate = []
     nots = []
     ands = []
 
     for i in range(inputs):
-        ors.append(save.addBlock(cm2.OR, (-i, 0, 0)))
+        inputGate.append(save.addBlock(cm2.OR, (-i, 0, 0)))
         nots.append(save.addBlock(cm2.NOR, (-i-inputs, 0, 0)))
-        save.addConnection(ors[i], nots[i])
+        save.addConnection(inputGate[i], nots[i])
 
     combinations = possibilites(inputs)
 
@@ -65,7 +65,7 @@ def generate_decoder(inputs):
         counter = 0
         for b in combinations[a]:
             if int(b) == 0:
-                save.addConnection(ors[counter], ands[a])
+                save.addConnection(inputGate[counter], ands[a])
             elif int(b) == 1:
                 save.addConnection(nots[counter], ands[a])
             counter += 1
@@ -79,3 +79,7 @@ def json_add(data, path, filename="commands.json"):
         file_data["commands"].append(data)
         jsonFile.seek(0)
         json.dump(file_data, jsonFile, indent=4)
+
+def rgb_hex(r, g, b): #UNUSED
+    hex_code = '#' + '{:02x}{:02x}{:02x}'.format(r, g, b)
+    return hex_code

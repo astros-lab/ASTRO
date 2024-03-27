@@ -7,6 +7,9 @@ import random
 import functions
 from io import StringIO
 import json
+import cm2image
+import cm2video
+import io
 
 load_dotenv()
 
@@ -14,6 +17,9 @@ TOKEN = os.environ['TOKEN']
 NAME = os.environ['name']
 
 bot = commands.Bot(command_prefix="", intents = discord.Intents.all())
+
+converting_video = False
+hi_lastuser = None
 
 @bot.event
 async def on_ready():
@@ -29,10 +35,11 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    global NAME
+    global NAME, hi_lastuser
     lowered_content = str(message.content).lower()
     if lowered_content == "hi" or "<@1213876646315171841>" in lowered_content: 
-        if str(message.author) != "ASTRO#8574":
+        if str(message.author) != "ASTRO#8574" and hi_lastuser != str(message.author):
+            hi_lastuser = str(message.author)
             await message.channel.send("hi")
 
     content = message.content
@@ -44,12 +51,6 @@ async def on_message(message):
         elif command[0] == "$" and str(message.author) != "ASTRO#8574":
             action = command[1:]
 
-            with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "a+") as log:
-                if joinedinputs == '':
-                    log.write(f"{message.author} did command ``{action}``\n")
-                else:
-                    log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
-
             extracmds = []
 
             commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/commands.json", "r"))
@@ -57,7 +58,7 @@ async def on_message(message):
             for i in range(len(cmd_list)):
                 extracmds.append(cmd_list[i]['command'])
 
-            commands = ["praise", "binary", "integer", "ascii", "pop", "say"]
+            commands = ["praise", "binary", "integer", "ascii", "pop"]
 
             all_commands = commands + extracmds
 
@@ -83,7 +84,7 @@ async def on_message(message):
                     return
                 except Exception:
                     output = "Invalid, $poll {title}, {options}, {more options} (use ',' as a separator))"
-            elif action == "say":
+            elif action == "say" and str(message.author) == "gaming4cats":
                 await message.delete()
                 output = joinedinputs
             elif action == "praise":
@@ -132,7 +133,10 @@ async def on_message(message):
                     for c in inputs:
                         characters.append(chr(int(c, 2)))
                     chars_joined = "".join(characters)
-                    output = f"Binary to ascii:\n```{chars_joined}```"
+                    if '`' in chars_joined:
+                        output = "nuh uh dont even try"
+                    else:
+                        output = f"Binary to ascii:\n```{chars_joined}```"
                 except Exception:
                     output = "Must be binary."
             elif action == "add" and str(message.author) == "gaming4cats":
@@ -142,18 +146,26 @@ async def on_message(message):
                     "command":name,
                     "output": " ".join(out)
                 }
-                
                 functions.json_add(data, f"/home/{NAME}/workspace/ASTRO/")
-
                 output = f"Created command: {name}\nOutput: {' '.join(out)}"
             elif action == "log" and str(message.author) == "gaming4cats":
                 with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "r+") as log:
                     output = "Recent $ commands\n" + "".join(log.readlines()[-5:])
+            elif action == "reboot" and str(message.author) == "gaming4cats":
+                await message.channel.send("Rebooting...")
+                os.system("rebootbot")
             else:
                 if action in extracmds:
                     output = cmd_list[extracmds.index(action)]['output']
                 else:
                     output = "Invalid command, see $help."
+
+            with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "a+") as log:
+                if joinedinputs == '':
+                    log.write(f"{message.author} did command ``{action}``\n")
+                else:
+                    log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
+
             try:
                 await message.channel.send(output)
             except discord.errors.HTTPException:
@@ -165,9 +177,9 @@ async def dpaste(message: discord.Interaction, input: str):
     link = functions.dpaste(input)
     await message.response.send_message(link)
     
-@bot.tree.command(name="text_cm2", description="create text in cm2")
+@bot.tree.command(name="textcm2", description="create text in cm2")
 @app_commands.describe(text="text to convert", step="space between text, default:0.5")
-async def text_cm2(message: discord.Interaction, text: str, step: float=0.5):
+async def textcm2(message: discord.Interaction, text: str, step: float=0.5):
     output = f"{functions.make_text(text, step)}"
     if len(output) > 1000:
         buffer = StringIO(output)
@@ -196,5 +208,52 @@ async def suggest(message: discord.Interaction, topic: str):
     with open(f"/home/{NAME}/workspace/ASTRO/suggestions.txt", "a+") as s:
         s.write(f"Name: {message.user}, Suggestion: {topic}\n")
     await message.response.send_message("Added suggestion")
+
+@bot.tree.command(name="imagecm2", description="Convert an Image to a CM2 save string.")
+@app_commands.describe(image="Image to convert", maxraw="Maximum raw size")
+async def imagecm2(message: discord.Interaction, image: discord.Attachment, maxraw: int=200_000):
+    await message.response.send_message("Converting...")
+    imBytes = await image.read()
+    save = cm2image.convert_image(io.BytesIO(imBytes), maxraw)
+    await message.edit_original_response(content=save)
+
+@bot.tree.command(name="videocm2", description="Convert a video to a CM2 save string.")
+@app_commands.describe(video="Video to convert", fps="Frames per second", tps="Ticks between frames, 2+ recommended", height="Height of the video", threshold="Pixel brightness to choose black or white")
+async def videocm2(message: discord.Interaction, video: discord.Attachment, fps: int=2, tps: int=2, height: int=16, threshold: int=200):
+    global NAME, converting_video
+
+    if converting_video:
+        await message.response.send_message("Currently converting video, please wait and try again.")
+        return
+    
+    converting_video = True
+
+    if video.content_type.startswith("video"):
+        integers = [fps, tps, height, threshold]
+        names = ["fps", "tps", "height", "threshold"]
+        errors = []
+        if height > 32:
+            errors.append("height over 32")
+        if threshold > 255:
+            errors.append("threshold over 255")
+        for i, integer in enumerate(integers):
+            if integer < 1:
+                errors.append(f"{names[i]} under 1")
+
+        if errors != []:
+            await message.response.send_message("ERROR: " + ", ".join(errors))
+            converting_video = False
+            return
+        
+        await message.response.send_message("Converting...")
+
+        await video.save(f"/home/{NAME}/workspace/ASTRO/frames/" + video.filename)
+        path = f"/home/{NAME}/workspace/ASTRO/frames/" + video.filename
+        save = cm2video.convertvideo(path, fps=fps, tps=tps, height=height, threshold=threshold)
+        await message.edit_original_response(content=save)
+    else:
+        await message.response.send_message("Must be a video file.")  
+
+    converting_video = False
 
 bot.run(TOKEN)

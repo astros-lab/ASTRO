@@ -29,12 +29,13 @@ def make_text(text, step=0.5, format=True):
             col +=1
 
     saveString = save.exportSave()
-
     returning = f"{saveString}"
-
     return returning
 
 def generate_decoder(inputs):
+    if inputs < 1:
+        return "Lower than 1 "
+
     def possibilites(amount):
         if amount == 0:
             return ['']

@@ -1,15 +1,18 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 import os
 from dotenv import load_dotenv
 import random
-import functions
-from io import StringIO
 import json
+import io
+from io import StringIO
+
+import botcommands
 import cm2image
 import cm2video
-import io
+import logiclicker
 
 load_dotenv()
 
@@ -35,38 +38,58 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    if message.author == bot.user or message.author.bot:
+        return
+    
     global NAME, hi_lastuser
+
     lowered_content = str(message.content).lower()
-    if lowered_content == "hi" or "<@1213876646315171841>" in lowered_content: 
-        if str(message.author) != "ASTRO#8574" and hi_lastuser != str(message.author):
+
+    if (str(message.author.id) == "844957879714840597" 
+        and str(message.channel.id) == "1187662902610636910"
+        and str(message.guild.id) == "956406294263242792") and any(attachment.width != None
+        or attachment.height != None
+        or attachment.content_type.startswith("video/")
+        for attachment in message.attachments):
+        await message.reply("literally me :3")
+        return
+
+    if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1:
+        await message.reply("meow :3") 
+
+    if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1 or "​" in message.content:
+        await message.add_reaction("<:smug:1187680194727772211>")
+
+    if lowered_content == "hi": 
+        if hi_lastuser != str(message.author):
             hi_lastuser = str(message.author)
             await message.channel.send("hi")
 
     content = message.content
-    command, inputs = functions.get_command(content)
+    command, inputs = botcommands.get_command(content)
     joinedinputs = " ".join(inputs)
     if command != "":
         if "@here" in content or "@everyone" in content:
-                pass
-        elif command[0] == "$" and str(message.author) != "ASTRO#8574":
+            return
+        elif command[0] == "$":
             action = command[1:]
 
             extracmds = []
 
-            commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/commands.json", "r"))
+            commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/stored_info/commands.json", "r"))
             cmd_list = commands["commands"]
             for i in range(len(cmd_list)):
                 extracmds.append(cmd_list[i]['command'])
 
-            commands = ["praise", "binary", "integer", "ascii", "pop"]
-
-            all_commands = commands + extracmds
+            commands = ["praise", "binary", "integer", "ascii", "pop", "poll", "embed"]
 
             if action == "help":
-                output = f"'$' commands: {', '.join(all_commands)}"
+                embed = discord.Embed(title="Commands:", color=0x6bd160)
+                embed.add_field(name="**Programmed Commands:**",value=", ".join(commands), inline=False)
+                embed.add_field(name="**Keyword Commands:**",value=", ".join(extracmds), inline=False)           
+                output = embed
             elif action == "poll":
                 numbers = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"] 
-                # color = functions.rgb_hex(0, 0, 255)
                 try:
                     name = joinedinputs.split(",")[0]
                     options = joinedinputs.split(",")[1:]
@@ -84,9 +107,15 @@ async def on_message(message):
                     return
                 except Exception:
                     output = "Invalid, $poll {title}, {options}, {more options} (use ',' as a separator))"
-            elif action == "say" and str(message.author) == "gaming4cats":
-                await message.delete()
-                output = joinedinputs
+            elif action == "embed":
+                pfp_ASTRO = "https://cdn.discordapp.com/avatars/1213876646315171841/ace5c28bc758e7eeeddf76d99f736e4e.png?size=4096"
+                embed = discord.Embed(title="some title", description="some description", colour=0xFF0000)
+                embed.add_field(name="some name", value="some value", inline=False)
+                embed.set_image(url=pfp_ASTRO)
+                embed.set_footer(text="some footer", icon_url=pfp_ASTRO)
+                embed.set_author(name="some name", url=pfp_ASTRO, icon_url=pfp_ASTRO)
+                embed.set_thumbnail(url=pfp_ASTRO)
+                output = embed
             elif action == "praise":
                 thing = joinedinputs
                 praise1 = f"{thing} is the best, everybody should pray to {thing}"
@@ -111,34 +140,53 @@ async def on_message(message):
                     output = "$pop {x} {y}"
             elif action == "binary":
                 try:
+                    embed = discord.Embed(title="Integer to Binary:")
+
                     value = int("".join(inputs))
-                    output = f"Integer to binary:\n```{bin(value)[2:]}```"
+                    embed.add_field(name="", value=f"```{bin(value)[2:]}```")
                 except Exception:
+                    embed = discord.Embed(title="Ascii to Binary:")
+
                     ascii_val = []
                     value = " ".join(inputs)
                     for c in value:
                         val = bin(ord(c))
                         ascii_val.append(val[2:])
                     ascii_joined = " ".join(ascii_val)
-                    output = f"Ascii to binary:\n```{ascii_joined}```"
+                    embed.add_field(name="", value=f"```{ascii_joined}```")
+
+                output = embed
             elif action == "integer":
+                embed = discord.Embed(title="Binary to Integer:")
                 try:
                     value = "".join(inputs)
-                    output = f"Binary to integer:\n```{int(value, 2)}```"
+                    embed.add_field(name="", value=f"```{int(value, 2)}```")
                 except Exception:
-                    output = "Must be binary."
+                    output = "Error. Input must be binary."
+
+                output = embed
             elif action == "ascii":
+                embed = discord.Embed(title="Binary to Ascii:")
                 try:
                     characters = []
                     for c in inputs:
                         characters.append(chr(int(c, 2)))
                     chars_joined = "".join(characters)
                     if '`' in chars_joined:
-                        output = "nuh uh dont even try"
+                        embed.add_field(name="", value=f"nuh uh dont even try")
                     else:
-                        output = f"Binary to ascii:\n```{chars_joined}```"
+                        embed.add_field(name="", value=f"```{chars_joined}```")
                 except Exception:
-                    output = "Must be binary."
+                    output = "Error. Input must be binary."
+
+                output = embed
+            elif action == "lc":
+                # output = logiclicker.interact(content=inputs)
+                output = "$lc IS DISABLED"
+
+            elif action == "say" and str(message.author) == "gaming4cats":
+                await message.delete()
+                output = joinedinputs
             elif action == "add" and str(message.author) == "gaming4cats":
                 name = inputs[0]
                 out = inputs[1:]
@@ -146,10 +194,10 @@ async def on_message(message):
                     "command":name,
                     "output": " ".join(out)
                 }
-                functions.json_add(data, f"/home/{NAME}/workspace/ASTRO/")
+                botcommands.json_add(data, f"/home/{NAME}/workspace/ASTRO/stored_info/")
                 output = f"Created command: {name}\nOutput: {' '.join(out)}"
             elif action == "log" and str(message.author) == "gaming4cats":
-                with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "r+") as log:
+                with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "r+") as log:
                     output = "Recent $ commands\n" + "".join(log.readlines()[-5:])
             elif action == "reboot" and str(message.author) == "gaming4cats":
                 await message.channel.send("Rebooting...")
@@ -160,32 +208,26 @@ async def on_message(message):
                 else:
                     output = "Invalid command, see $help."
 
-            with open(f"/home/{NAME}/workspace/ASTRO/dollarLog.txt", "a+") as log:
+
+            with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "a+") as log:
                 if joinedinputs == '':
                     log.write(f"{message.author} did command ``{action}``\n")
                 else:
                     log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
 
             try:
+                if isinstance(output, discord.Embed):
+                    await message.channel.send(embed=output)
+                    return
                 await message.channel.send(output)
             except discord.errors.HTTPException:
-                await message.channel.send("Message over character limit")
+                await message.channel.send("Error sending message.")
 
 @bot.tree.command(name="dpaste", description="get a raw dpaste link")
 @app_commands.describe(input="text you want to send to dpaste")
 async def dpaste(message: discord.Interaction, input: str):
-    link = functions.dpaste(input)
+    link = botcommands.dpaste(input)
     await message.response.send_message(link)
-    
-@bot.tree.command(name="textcm2", description="create text in cm2")
-@app_commands.describe(text="text to convert", step="space between text, default:0.5")
-async def textcm2(message: discord.Interaction, text: str, step: float=0.5):
-    output = f"{functions.make_text(text, step)}"
-    if len(output) > 1000:
-        buffer = StringIO(output)
-        f = discord.File(buffer, filename="output.txt")
-        await message.response.send_message(file=f)
-    await message.response.send_message(f"```{output}```")
 
 @bot.tree.command(name="decoder_generator", description="generate a decoder")
 @app_commands.describe(inputs="amount of inputs")
@@ -193,7 +235,7 @@ async def decoder_generator(message: discord.Interaction, inputs: int):
     if inputs > 10:
         await message.response.send_message("too much")
     else:
-        output = f"{functions.generate_decoder(inputs)}"
+        output = f"{botcommands.generate_decoder(inputs)}"
         if len(output) > 1000:
             buffer = StringIO(output)
             f = discord.File(buffer, filename="output.txt")
@@ -205,16 +247,26 @@ async def decoder_generator(message: discord.Interaction, inputs: int):
 @app_commands.describe(topic="what do you want to suggest")
 async def suggest(message: discord.Interaction, topic: str):
     global NAME
-    with open(f"/home/{NAME}/workspace/ASTRO/suggestions.txt", "a+") as s:
+    with open(f"/home/{NAME}/workspace/ASTRO/stored_info/suggestions.txt", "a+") as s:
         s.write(f"Name: {message.user}, Suggestion: {topic}\n")
     await message.response.send_message("Added suggestion")
 
+@bot.tree.command(name="textcm2", description="create text in cm2")
+@app_commands.describe(text="text to convert", step="space between text, default:0.5")
+async def textcm2(message: discord.Interaction, text: str, step: float=0.5):
+    output = f"{botcommands.make_text(text, step)}"
+    if len(output) > 1000:
+        buffer = StringIO(output)
+        f = discord.File(buffer, filename="output.txt")
+        await message.response.send_message(file=f)
+    await message.response.send_message(f"```{output}```")
+
 @bot.tree.command(name="imagecm2", description="Convert an Image to a CM2 save string.")
-@app_commands.describe(image="Image to convert", maxraw="Maximum raw size")
-async def imagecm2(message: discord.Interaction, image: discord.Attachment, maxraw: int=200_000):
+@app_commands.describe(image="Image to convert", maxraw="Maximum raw size", spacingfactor="Spacing factor, example 2 means spacing of 0.5 studs")
+async def imagecm2(message: discord.Interaction, image: discord.Attachment, maxraw: int=200_000, spacingfactor: int=1):
     await message.response.send_message("Converting...")
     imBytes = await image.read()
-    save = cm2image.convert_image(io.BytesIO(imBytes), maxraw)
+    save = cm2image.convert_image(io.BytesIO(imBytes), maxraw, spacingfactor)
     await message.edit_original_response(content=save)
 
 @bot.tree.command(name="videocm2", description="Convert a video to a CM2 save string.")

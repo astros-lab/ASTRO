@@ -3,10 +3,13 @@ from PIL import Image
 import math
 import requests
 from datetime import datetime
+import botcommands
 
-def convert_image(sentimage, maxsize):
-    if maxsize > 500000:
-        return "Max raw size must be under 500k."
+def convert_image(sentimage, maxsize, spacingfactor):
+    if maxsize > 500_000:
+        return "Max raw size must be under 500k raw."
+    if spacingfactor > 20:
+        return "Spacing factor recommened to be under 20."
 
     start=datetime.now()
 
@@ -37,12 +40,15 @@ def convert_image(sentimage, maxsize):
             continue
 
         for x in range(dimensions[0]):
-            for y in range(dimensions[1]):
-                color_vars = colors[y * dimensions[0] + x]
+            for height in range(dimensions[1]):
+                color_vars = colors[height * dimensions[0] + x]
+                y = dimensions[1] - 1 - height
+                spacing = 1 / spacingfactor
+                z = x * y * 0.00001
                 if isinstance(color_vars, int):
-                    save.addBlock(cm2.TILE, (x, dimensions[1] - 1 - y, 0), properties=[color_vars, color_vars, color_vars])
+                    save.addBlock(cm2.TILE, (x * spacing, y * spacing, z), properties=[color_vars, color_vars, color_vars], snapToGrid=False)
                 else:
-                    save.addBlock(cm2.TILE, (x, dimensions[1] - 1 - y, 0), properties=[color_vars[0], color_vars[1], color_vars[2]])
+                    save.addBlock(cm2.TILE, (x * spacing, y * spacing, z), properties=[color_vars[0], color_vars[1], color_vars[2]], snapToGrid=False)
 
         saveString = save.exportSave()      
         saveLength = len(saveString)
@@ -51,9 +57,5 @@ def convert_image(sentimage, maxsize):
             underKb = True
         else: counter += 1
 
-    # Sends to dpaste
-    data = {"content": saveString, "syntax": "text", "expiry_days": 1}
-    headers = {"User-Agent": "saveString"}
-    r = requests.post("https://dpaste.com/api/v2/", data=data, headers=headers)
-    raw_url = f"{r.text.strip()}.txt"
+    raw_url = botcommands.dpaste(saveString)
     return f"Here's the result! ({datetime.now()-start}):\n```{raw_url}```"

@@ -1,6 +1,4 @@
 .env
 __pycache__
-suggestions.txt
-dollarLog.txt
-commands.json
 frames
+stored_info

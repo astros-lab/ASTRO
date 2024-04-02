@@ -6,16 +6,10 @@ import requests
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import botcommands
 
 load_dotenv()
 NAME = os.environ['name']
-
-def dpasteCall(text):
-    data = {"content": text, "syntax": "text", "expiry_days": 1}
-    headers = {"User-Agent": "saveString"}
-    r = requests.post("https://dpaste.com/api/v2/", data=data, headers=headers)
-    raw_url = f"{r.text.strip()}.txt"
-    return raw_url
 
 def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
     global NAME, currentlyconverting
@@ -103,6 +97,6 @@ def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
 
     saveString = save.exportSave()
 
-    url = dpasteCall(saveString)
+    url = botcommands.dpaste(saveString)
     os.remove(path)
     return f"Here's the result! ({datetime.now()-start}):\n\n**File**: {path.split('/')[-1]}```\n{url}```\n**FPS**: {fps} **TPS**: {tps}\n**Dimensions**: {xdim}, {ydim}\n**Threshold**: {threshold}"

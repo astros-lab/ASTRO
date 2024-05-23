@@ -2,6 +2,7 @@ import requests
 import cm2py as cm2
 import json
 from datetime import datetime
+import os
 
 def get_command(message: str):
     separated = message.split(" ")
@@ -81,10 +82,6 @@ def json_add(data, path, filename="commands.json"):
         file_data["commands"].append(data)
         jsonFile.seek(0)
         json.dump(file_data, jsonFile, indent=4)
-
-def rgb_hex(r, g, b): #UNUSED
-    hex_code = '#' + '{:02x}{:02x}{:02x}'.format(r, g, b)
-    return hex_code
 
 def melbournetime():
     url = "https://timeapi.io/api/Time/current/zone"

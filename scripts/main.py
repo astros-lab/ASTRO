@@ -85,14 +85,14 @@ async def on_message(message):
             commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/stored_info/commands.json", "r"))
             cmd_list = commands["commands"]
             for i in range(len(cmd_list)):
-                extracmds.append(cmd_list[i]['command'])
+                extracmds.append("$" + cmd_list[i]['command'])
 
-            commands = ["praise", "binary", "integer", "ascii", "pop", "poll", "embed", "skmtime", "astrotime", "togglehi"]
+            commands = ["$praise {thing}", "$binary {number/string}", "$integer {binary}", "$ascii {binary}", "$pop {x} {y}", "$poll {name}, {option 1}, {option2}, {etc (max 10)}", "$embed", "$skmtime", "$astrotime", "$togglehi"]
 
             if action == "help":
                 embed = discord.Embed(title="Commands:", color=0x6bd160)
-                embed.add_field(name="**Programmed Commands:**",value=", ".join(commands), inline=False)
-                embed.add_field(name="**Keyword Commands:**",value=", ".join(extracmds), inline=False)           
+                embed.add_field(name="**Programmed Commands:**",value=" **|** ".join(commands), inline=False) 
+                embed.add_field(name="**Keyword Commands:**",value=" **|** ".join(extracmds), inline=False)           
                 output = embed
             elif action == "poll":
                 numbers = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"] 
@@ -244,9 +244,6 @@ async def on_message(message):
             elif action == "log" and str(message.author) == "gaming4cats":
                 with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "r+") as log:
                     output = "Recent $ commands\n" + "".join(log.readlines()[-5:])
-            elif action == "reboot" and str(message.author) == "gaming4cats":
-                await message.channel.send("Rebooting...")
-                os.system("rebootbot")
             elif action == "skmtime":
                 output = botcommands.melbournetime()
             elif action == "astrotime":

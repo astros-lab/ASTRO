@@ -12,7 +12,6 @@ from io import StringIO
 import botcommands
 import cm2image
 import cm2video
-import logiclicker
 
 load_dotenv()
 
@@ -38,11 +37,11 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    global NAME, hi_lastuser
+
     if message.author == bot.user or message.author.bot:
         return
     
-    global NAME, hi_lastuser
-
     lowered_content = str(message.content).lower()
 
     if (str(message.author.id) == "844957879714840597" 
@@ -51,7 +50,10 @@ async def on_message(message):
         or attachment.height != None
         or attachment.content_type.startswith("video/")
         for attachment in message.attachments):
-        await message.reply("literally me :3")
+        if "me and who" in lowered_content or "me n who" in lowered_content:
+            await message.reply("us")
+        else:
+            await message.reply("literally me")
         return
 
     if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1:
@@ -60,17 +62,21 @@ async def on_message(message):
     if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1 or "​" in message.content:
         await message.add_reaction("<:smug:1187680194727772211>")
 
-    if lowered_content == "hi": 
-        if hi_lastuser != str(message.author):
-            hi_lastuser = str(message.author)
-            await message.channel.send("hi")
+    if lowered_content == "hi":
+        with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "r") as disabled:
+            disabledusers = disabled.readlines()
+            users = []
+            for x in disabledusers:
+                users.append(int(x.strip()))
+            if hi_lastuser != str(message.author) and message.author.id not in users:
+                hi_lastuser = str(message.author)
+                await message.channel.send("hi")
 
     content = message.content
     command, inputs = botcommands.get_command(content)
     joinedinputs = " ".join(inputs)
     if command != "":
-        if "@here" in content or "@everyone" in content:
-            return
+        if "@here" in content or "@everyone" in content: return
         elif command[0] == "$":
             action = command[1:]
 
@@ -81,7 +87,7 @@ async def on_message(message):
             for i in range(len(cmd_list)):
                 extracmds.append(cmd_list[i]['command'])
 
-            commands = ["praise", "binary", "integer", "ascii", "pop", "poll", "embed"]
+            commands = ["praise", "binary", "integer", "ascii", "pop", "poll", "embed", "skmtime", "astrotime", "togglehi"]
 
             if action == "help":
                 embed = discord.Embed(title="Commands:", color=0x6bd160)
@@ -180,13 +186,52 @@ async def on_message(message):
                     output = "Error. Input must be binary."
 
                 output = embed
-            elif action == "lc":
-                # output = logiclicker.interact(content=inputs)
-                output = "$lc IS DISABLED"
+            elif action == "togglehi":
+                with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "r") as togglefile:
+                    removedusers = togglefile.readlines()
 
+                    for i, v in enumerate(removedusers):
+                        removedusers[i] = str(v.strip())
+
+                    disabled_users = []
+
+                    for x in removedusers:
+                        disabled_users.append(int(x))
+
+                    if message.author.id not in disabled_users:
+                        removedusers.append(str(message.author.id))
+                        output = "'hi' has been disabled for you."
+                    else:
+                        print(removedusers)
+                        removedusers.remove(str(message.author.id))
+                        print(removedusers)
+                        
+                        output = "'hi' has been re-enabled for you."
+
+                    with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "w") as togglefile:
+                        togglefile.write("\n".join(removedusers))
+                    
             elif action == "say" and str(message.author) == "gaming4cats":
+                try:
+                    replied_message = await message.channel.fetch_message(message.reference.message_id)
+                    await message.delete()
+                    await replied_message.reply(joinedinputs, mention_author=False)
+                    return
+                except:
+                    await message.delete()
+                    output = joinedinputs
+            elif action == "react" and str(message.author) == "gaming4cats":               
+                message_id = int(inputs[0].split('/')[-1])
+                
                 await message.delete()
-                output = joinedinputs
+
+                try:
+                    reacted_message = await message.channel.fetch_message(message_id)
+                    await reacted_message.add_reaction(inputs[1])
+                except:
+                    pass
+
+                return
             elif action == "add" and str(message.author) == "gaming4cats":
                 name = inputs[0]
                 out = inputs[1:]
@@ -202,6 +247,10 @@ async def on_message(message):
             elif action == "reboot" and str(message.author) == "gaming4cats":
                 await message.channel.send("Rebooting...")
                 os.system("rebootbot")
+            elif action == "skmtime":
+                output = botcommands.melbournetime()
+            elif action == "astrotime":
+                output = botcommands.torontotime()
             else:
                 if action in extracmds:
                     output = cmd_list[extracmds.index(action)]['output']
@@ -210,10 +259,11 @@ async def on_message(message):
 
 
             with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "a+") as log:
-                if joinedinputs == '':
-                    log.write(f"{message.author} did command ``{action}``\n")
-                else:
-                    log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
+                if str(message.author) != "gaming4cats":
+                    if joinedinputs == '':
+                        log.write(f"{message.author} did command ``{action}``\n")
+                    else:
+                        log.write(f"{message.author} did command ``{action}``, inputs: ``{joinedinputs}``\n")
 
             try:
                 if isinstance(output, discord.Embed):
@@ -266,7 +316,7 @@ async def textcm2(message: discord.Interaction, text: str, step: float=0.5):
 async def imagecm2(message: discord.Interaction, image: discord.Attachment, maxraw: int=200_000, spacingfactor: int=1):
     await message.response.send_message("Converting...")
     imBytes = await image.read()
-    save = cm2image.convert_image(io.BytesIO(imBytes), maxraw, spacingfactor)
+    save = cm2image.convert_image(io.BytesIO(imBytes), maxraw, spacingfactor, message.user.name)
     await message.edit_original_response(content=save)
 
 @bot.tree.command(name="videocm2", description="Convert a video to a CM2 save string.")
@@ -284,7 +334,7 @@ async def videocm2(message: discord.Interaction, video: discord.Attachment, fps:
         integers = [fps, tps, height, threshold]
         names = ["fps", "tps", "height", "threshold"]
         errors = []
-        if height > 32:
+        if height > 32 and str(message.user.name) != "gaming4cats":
             errors.append("height over 32")
         if threshold > 255:
             errors.append("threshold over 255")

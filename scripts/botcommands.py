@@ -1,6 +1,7 @@
 import requests
 import cm2py as cm2
 import json
+from datetime import datetime
 
 def get_command(message: str):
     separated = message.split(" ")
@@ -84,3 +85,37 @@ def json_add(data, path, filename="commands.json"):
 def rgb_hex(r, g, b): #UNUSED
     hex_code = '#' + '{:02x}{:02x}{:02x}'.format(r, g, b)
     return hex_code
+
+def melbournetime():
+    url = "https://timeapi.io/api/Time/current/zone"
+    params = {"timeZone": "Australia/Melbourne"}
+
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+        modTime = data["time"]
+        modTime = (int(modTime.split(":")[0]) - 1) % 12 + 1
+        if int(data["time"].split(":")[0]) > 11:
+            amPm = "PM"
+        else:
+            amPm = "AM"
+        minutes = data["time"].split(":")[1]
+        formatted_time = f"{modTime:02}:{minutes} {amPm}"
+        current_time = f"```Day: {data['date']}\nTime: {formatted_time}\nZone: {data['timeZone']}```"
+
+        return current_time
+    except requests.exceptions.RequestException as e:
+        return f"Error: {e}"
+
+def torontotime():
+    time = datetime.now().strftime('%H:%M')
+    modTime = (int(time.split(":")[0]) - 1) % 12 + 1
+    if int(time.split(":")[0]) > 11:
+        amPm = "PM"
+    else:
+        amPm = "AM"
+    minutes = time.split(":")[1]
+    formatted_time = f"{modTime:02}:{minutes} {amPm}"
+    current_time = f"```Time for astro: {formatted_time}```"
+
+    return current_time

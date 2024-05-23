@@ -5,10 +5,10 @@ import requests
 from datetime import datetime
 import botcommands
 
-def convert_image(sentimage, maxsize, spacingfactor):
-    if maxsize > 500_000:
+def convert_image(sentimage, maxsize, spacingfactor, sender):
+    if maxsize > 500_000 and str(sender) != "gaming4cats":
         return "Max raw size must be under 500k raw."
-    if spacingfactor > 20:
+    if spacingfactor > 20 and str(sender) != "gaming4cats":
         return "Spacing factor recommened to be under 20."
 
     start=datetime.now()

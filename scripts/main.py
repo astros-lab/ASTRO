@@ -21,7 +21,6 @@ NAME = os.environ['name']
 bot = commands.Bot(command_prefix="", intents = discord.Intents.all())
 
 converting_video = False
-hi_lastuser = None
 
 @bot.event
 async def on_ready():
@@ -56,21 +55,8 @@ async def on_message(message):
             await message.reply("literally me")
         return
 
-    if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1:
-        await message.reply("meow :3") 
-
     if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1 or "​" in message.content:
         await message.add_reaction("<:smug:1187680194727772211>")
-
-    if lowered_content == "hi":
-        with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "r") as disabled:
-            disabledusers = disabled.readlines()
-            users = []
-            for x in disabledusers:
-                users.append(int(x.strip()))
-            if hi_lastuser != str(message.author) and message.author.id not in users:
-                hi_lastuser = str(message.author)
-                await message.channel.send("hi")
 
     content = message.content
     command, inputs = botcommands.get_command(content)
@@ -87,32 +73,13 @@ async def on_message(message):
             for i in range(len(cmd_list)):
                 extracmds.append("$" + cmd_list[i]['command'])
 
-            commands = ["$praise {thing}", "$binary {number/string}", "$integer {binary}", "$ascii {binary}", "$pop {x} {y}", "$poll {name}, {option 1}, {option2}, {etc (max 10)}", "$embed", "$skmtime", "$astrotime", "$togglehi"]
+            commands = ["$binary {number/string}", "$integer {binary}", "$ascii {binary}", "$embed", "$skmtime", "$astrotime"]
 
             if action == "help":
                 embed = discord.Embed(title="Commands:", color=0x6bd160)
                 embed.add_field(name="**Programmed Commands:**",value=" **|** ".join(commands), inline=False) 
                 embed.add_field(name="**Keyword Commands:**",value=" **|** ".join(extracmds), inline=False)           
                 output = embed
-            elif action == "poll":
-                numbers = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"] 
-                try:
-                    name = joinedinputs.split(",")[0]
-                    options = joinedinputs.split(",")[1:]
-                    if len(options) > 10:
-                        await message.channel.send("Maximum 10 options.")
-                        return
-                    
-                    embed = discord.Embed(title=name, description=f"Poll created by {message.author.display_name}({message.author})", color=0x0000ff)
-                    for i, option in enumerate(options):
-                        embed.add_field(name="",value=f"{numbers[i]} {option}", inline=False)
-
-                    poll = await message.channel.send(embed=embed)
-                    for j, option in enumerate(options):
-                        await poll.add_reaction(numbers[j])
-                    return
-                except Exception:
-                    output = "Invalid, $poll {title}, {options}, {more options} (use ',' as a separator))"
             elif action == "embed":
                 pfp_ASTRO = "https://cdn.discordapp.com/avatars/1213876646315171841/ace5c28bc758e7eeeddf76d99f736e4e.png?size=4096"
                 embed = discord.Embed(title="some title", description="some description", colour=0xFF0000)
@@ -122,28 +89,6 @@ async def on_message(message):
                 embed.set_author(name="some name", url=pfp_ASTRO, icon_url=pfp_ASTRO)
                 embed.set_thumbnail(url=pfp_ASTRO)
                 output = embed
-            elif action == "praise":
-                thing = joinedinputs
-                praise1 = f"{thing} is the best, everybody should pray to {thing}"
-                praise2 = f"We all live to love {thing}"
-                praise3 = f"We must all pray to {thing}"
-                praise4 = f"Nobody should disrespect {thing}"
-                praise5 = f"ALL HAIL {thing.upper()}"
-                praises = [praise1, praise2, praise3, praise4, praise5]
-                output = random.choice(praises)
-            elif action == "pop":
-                try:
-                    x = int(inputs[0])
-                    y = int(inputs[1])
-                    
-                    matrix = []
-
-                    for i in range(y):
-                        matrix.append("||pop||" * x)
-
-                    output = "\n".join(matrix)
-                except Exception:
-                    output = "$pop {x} {y}"
             elif action == "binary":
                 try:
                     embed = discord.Embed(title="Integer to Binary:")
@@ -185,32 +130,7 @@ async def on_message(message):
                 except Exception:
                     output = "Error. Input must be binary."
 
-                output = embed
-            elif action == "togglehi":
-                with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "r") as togglefile:
-                    removedusers = togglefile.readlines()
-
-                    for i, v in enumerate(removedusers):
-                        removedusers[i] = str(v.strip())
-
-                    disabled_users = []
-
-                    for x in removedusers:
-                        disabled_users.append(int(x))
-
-                    if message.author.id not in disabled_users:
-                        removedusers.append(str(message.author.id))
-                        output = "'hi' has been disabled for you."
-                    else:
-                        print(removedusers)
-                        removedusers.remove(str(message.author.id))
-                        print(removedusers)
-                        
-                        output = "'hi' has been re-enabled for you."
-
-                    with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dont_say_hi", "w") as togglefile:
-                        togglefile.write("\n".join(removedusers))
-                    
+                output = embed                    
             elif action == "say" and str(message.author) == "gaming4cats":
                 try:
                     replied_message = await message.channel.fetch_message(message.reference.message_id)

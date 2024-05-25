@@ -71,14 +71,14 @@ async def on_message(message):
             commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/stored_info/commands.json", "r"))
             cmd_list = commands["commands"]
             for i in range(len(cmd_list)):
-                extracmds.append("$" + cmd_list[i]['command'])
+                extracmds.append(cmd_list[i]['command'])
 
             commands = ["$binary {number/string}", "$integer {binary}", "$ascii {binary}", "$embed", "$skmtime", "$astrotime"]
 
             if action == "help":
                 embed = discord.Embed(title="Commands:", color=0x6bd160)
                 embed.add_field(name="**Programmed Commands:**",value=" **|** ".join(commands), inline=False) 
-                embed.add_field(name="**Keyword Commands:**",value=" **|** ".join(extracmds), inline=False)           
+                embed.add_field(name="**Keyword Commands:**",value=" **|** ".join('$' + i for i in extracmds), inline=False)           
                 output = embed
             elif action == "embed":
                 pfp_ASTRO = "https://cdn.discordapp.com/avatars/1213876646315171841/ace5c28bc758e7eeeddf76d99f736e4e.png?size=4096"

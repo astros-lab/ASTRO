@@ -27,9 +27,9 @@ def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
             break
         if i > frameskip - 1:
             framecount += 1
-            cv2.imwrite(f'/home/{NAME}/workspace/ASTRO/frames/videoframe_' + str(framecount) + '.jpg', frame)
+            cv2.imwrite(f'/home/{NAME}/workspace/ASTRO/storage/frames/videoframe_' + str(framecount) + '.jpg', frame)
 
-            image_file = Image.open(f"/home/{NAME}/workspace/ASTRO/frames/videoframe_{str(framecount)}.jpg")
+            image_file = Image.open(f"/home/{NAME}/workspace/ASTRO/storage/frames/videoframe_{str(framecount)}.jpg")
 
             xdim, ydim = round(image_file.size[0] / (image_file.size[1] / height)), height
 
@@ -38,11 +38,11 @@ def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
             fn = lambda x : 255 if x > threshold else 0
             converted = compressed.convert('L').point(fn, mode='1')
 
-            converted.save(f"/home/{NAME}/workspace/ASTRO/frames/" + 'converted_' + str(framecount) + '.jpg')
-            os.remove(f'/home/{NAME}/workspace/ASTRO/frames/videoframe_' + str(framecount) + '.jpg')
+            converted.save(f"/home/{NAME}/workspace/ASTRO/storage/frames/" + 'converted_' + str(framecount) + '.jpg')
+            os.remove(f'/home/{NAME}/workspace/ASTRO/storage/frames/videoframe_' + str(framecount) + '.jpg')
 
             frames[str(framecount)] = []
-            im = Image.open(f"/home/{NAME}/workspace/ASTRO/frames/" + 'converted_' + str(framecount) + '.jpg')
+            im = Image.open(f"/home/{NAME}/workspace/ASTRO/storage/frames/" + 'converted_' + str(framecount) + '.jpg')
             colors = list(im.getdata())
             for x in range(xdim):
                 frames[str(framecount)].append([])
@@ -51,11 +51,11 @@ def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
                     blackorwhite = round(a / 255)
                     frames[str(framecount)][x].append(blackorwhite)
 
-            os.remove(f"/home/{NAME}/workspace/ASTRO/frames/" + 'converted_' + str(framecount) + '.jpg')
+            os.remove(f"/home/{NAME}/workspace/ASTRO/storage/frames/" + 'converted_' + str(framecount) + '.jpg')
 
             if str(datetime.now()-start).split(":")[1] == "01":
                 os.remove(path)
-                return "Took over 1 minute, canceled. Set fps higher to reduce time."
+                return "Took over 1 minute, canceled. Set frame division higher to reduce time."
 
             i = 0
             continue
@@ -99,4 +99,4 @@ def convertvideo(path, fps=10, height=16, tps=2, threshold=128):
 
     url = botcommands.dpaste(saveString)
     os.remove(path)
-    return f"Here's the result! ({datetime.now()-start}):\n\n**File**: {path.split('/')[-1]}```\n{url}```\n**FPS**: {fps} **TPS**: {tps}\n**Dimensions**: {xdim}, {ydim}\n**Threshold**: {threshold}"
+    return f"Here's the result! ({datetime.now()-start}):\n\n**File**: {path.split('/')[-1]}```\n{url}```\n**Frame Division**: {fps} **TPS**: {tps}\n**Dimensions**: {xdim}, {ydim}\n**Threshold**: {threshold}"

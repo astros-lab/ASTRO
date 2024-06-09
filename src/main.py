@@ -1,17 +1,17 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-
 import os
 from dotenv import load_dotenv
 import random
 import json
 import io
 from io import StringIO
-
 import botcommands
 import cm2image
 import cm2video
+import importlib
+import sys
 
 load_dotenv()
 
@@ -34,9 +34,52 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+# @bot.event
+# async def on_message(message):
+#     def split_cmd(msg: str):
+#         cmdsplit = msg.split(" ")
+#         return cmdsplit[0], cmdsplit[1:]
+
+#     if message.author == bot.user or message.author.bot:
+#         return
+
+#     content = message.content
+#     lowered_content = str(content).lower()
+#     command, inputs = split_cmd(content)
+
+#     if command[1:] != "" and command[0] == "$":
+#         cmd = command[1:]
+#         cmdlist = [i.name.replace(".py", "") for i in os.scandir("./src/commands")]
+        
+#         blocked = ["@everyone", "@here"]
+#         if any(ping in content for ping in blocked) or (cmd not in cmdlist):
+#             return
+
+#         attributes = {
+#             "message": message,
+#             "inputs": inputs,
+#             "lowered": lowered_content
+#         }
+        
+#         if cmd in sys.modules:
+#             func = importlib.reload(sys.modules[cmd])
+#         else:
+#             func = importlib.import_module(f"commands.{cmd}")
+#         output = func.main(attributes)
+
+#         try:
+#             if isinstance(output, discord.Embed):
+#                 await message.channel.send(embed=output)
+#                 return
+#             await message.channel.send(output)
+#         except:
+#             await message.channel.send("Failed to send message.")
+        
+
+
 @bot.event
 async def on_message(message):
-    global NAME, hi_lastuser
+    global NAME
 
     if message.author == bot.user or message.author.bot:
         return
@@ -68,7 +111,7 @@ async def on_message(message):
 
             extracmds = []
 
-            commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/stored_info/commands.json", "r"))
+            commands = json.load(open(f"/home/{NAME}/workspace/ASTRO/storage/commands.json", "r"))
             cmd_list = commands["commands"]
             for i in range(len(cmd_list)):
                 extracmds.append(cmd_list[i]['command'])
@@ -110,12 +153,17 @@ async def on_message(message):
             elif action == "integer":
                 embed = discord.Embed(title="Binary to Integer:")
                 try:
-                    value = "".join(inputs)
-                    embed.add_field(name="", value=f"```{int(value, 2)}```")
+                    numbers = []
+                    for n in inputs:
+                        numbers.append(str(int(n, 2)))
+
+                    nums = " ".join(numbers)
+                    print(nums, numbers)
+                    embed.add_field(name="", value=f"```{nums}```")
+
+                    output = embed
                 except Exception:
                     output = "Error. Input must be binary."
-
-                output = embed
             elif action == "ascii":
                 embed = discord.Embed(title="Binary to Ascii:")
                 try:
@@ -130,7 +178,7 @@ async def on_message(message):
                 except Exception:
                     output = "Error. Input must be binary."
 
-                output = embed                    
+                output = embed    
             elif action == "say" and str(message.author) == "gaming4cats":
                 try:
                     replied_message = await message.channel.fetch_message(message.reference.message_id)
@@ -159,23 +207,22 @@ async def on_message(message):
                     "command":name,
                     "output": " ".join(out)
                 }
-                botcommands.json_add(data, f"/home/{NAME}/workspace/ASTRO/stored_info/")
+                botcommands.json_add(data, f"/home/{NAME}/workspace/ASTRO/storage/")
                 output = f"Created command: {name}\nOutput: {' '.join(out)}"
             elif action == "log" and str(message.author) == "gaming4cats":
-                with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "r+") as log:
+                with open(f"/home/{NAME}/workspace/ASTRO/storage/dollarLog.txt", "r+") as log:
                     output = "Recent $ commands\n" + "".join(log.readlines()[-5:])
             elif action == "skmtime":
                 output = botcommands.melbournetime()
             elif action == "astrotime":
                 output = botcommands.torontotime()
+            elif action in extracmds:
+                output = cmd_list[extracmds.index(action)]['output']
             else:
-                if action in extracmds:
-                    output = cmd_list[extracmds.index(action)]['output']
-                else:
-                    output = "Invalid command, see $help."
+                return
 
 
-            with open(f"/home/{NAME}/workspace/ASTRO/stored_info/dollarLog.txt", "a+") as log:
+            with open(f"/home/{NAME}/workspace/ASTRO/storage/dollarLog.txt", "a+") as log:
                 if str(message.author) != "gaming4cats":
                     if joinedinputs == '':
                         log.write(f"{message.author} did command ``{action}``\n")
@@ -210,14 +257,6 @@ async def decoder_generator(message: discord.Interaction, inputs: int):
         else:
             await message.response.send_message(f"```{output}```")
 
-@bot.tree.command(name="suggest", description="suggest an idea for the bot")
-@app_commands.describe(topic="what do you want to suggest")
-async def suggest(message: discord.Interaction, topic: str):
-    global NAME
-    with open(f"/home/{NAME}/workspace/ASTRO/stored_info/suggestions.txt", "a+") as s:
-        s.write(f"Name: {message.user}, Suggestion: {topic}\n")
-    await message.response.send_message("Added suggestion")
-
 @bot.tree.command(name="textcm2", description="create text in cm2")
 @app_commands.describe(text="text to convert", step="space between text, default:0.5")
 async def textcm2(message: discord.Interaction, text: str, step: float=0.5):
@@ -237,8 +276,8 @@ async def imagecm2(message: discord.Interaction, image: discord.Attachment, maxr
     await message.edit_original_response(content=save)
 
 @bot.tree.command(name="videocm2", description="Convert a video to a CM2 save string.")
-@app_commands.describe(video="Video to convert", fps="Frames per second", tps="Ticks between frames, 2+ recommended", height="Height of the video", threshold="Pixel brightness to choose black or white")
-async def videocm2(message: discord.Interaction, video: discord.Attachment, fps: int=2, tps: int=2, height: int=16, threshold: int=200):
+@app_commands.describe(video="Video to convert", framedivision="Divides the frames, 2 means that 60fps would be 30fps", tps="Ticks between frames, 2+ recommended", height="Height of the video", threshold="Pixel brightness to choose black or white")
+async def videocm2(message: discord.Interaction, video: discord.Attachment, framedivision: int=2, tps: int=2, height: int=16, threshold: int=200):
     global NAME, converting_video
 
     if converting_video:
@@ -248,7 +287,7 @@ async def videocm2(message: discord.Interaction, video: discord.Attachment, fps:
     converting_video = True
 
     if video.content_type.startswith("video"):
-        integers = [fps, tps, height, threshold]
+        integers = [framedivision, tps, height, threshold]
         names = ["fps", "tps", "height", "threshold"]
         errors = []
         if height > 32 and str(message.user.name) != "gaming4cats":
@@ -266,9 +305,9 @@ async def videocm2(message: discord.Interaction, video: discord.Attachment, fps:
         
         await message.response.send_message("Converting...")
 
-        await video.save(f"/home/{NAME}/workspace/ASTRO/frames/" + video.filename)
-        path = f"/home/{NAME}/workspace/ASTRO/frames/" + video.filename
-        save = cm2video.convertvideo(path, fps=fps, tps=tps, height=height, threshold=threshold)
+        await video.save(f"/home/{NAME}/workspace/ASTRO/storage/frames/" + video.filename)
+        path = f"/home/{NAME}/workspace/ASTRO/storage/frames/" + video.filename
+        save = cm2video.convertvideo(path, fps=framedivision, tps=tps, height=height, threshold=threshold)
         await message.edit_original_response(content=save)
     else:
         await message.response.send_message("Must be a video file.")  

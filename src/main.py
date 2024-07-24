@@ -86,21 +86,6 @@ async def on_message(message):
     
     lowered_content = str(message.content).lower()
 
-    if (str(message.author.id) == "844957879714840597" 
-        and str(message.channel.id) == "1187662902610636910"
-        and str(message.guild.id) == "956406294263242792") and any(attachment.width != None
-        or attachment.height != None
-        or attachment.content_type.startswith("video/")
-        for attachment in message.attachments):
-        if "me and who" in lowered_content or "me n who" in lowered_content:
-            await message.reply("us")
-        else:
-            await message.reply("literally me")
-        return
-
-    if str(message.author.id) == "665724183094755359" and random.randint(1, 100) == 1 or "​" in message.content:
-        await message.add_reaction("<:smug:1187680194727772211>")
-
     content = message.content
     command, inputs = botcommands.get_command(content)
     joinedinputs = " ".join(inputs)
